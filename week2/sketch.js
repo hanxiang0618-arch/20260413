@@ -1,234 +1,145 @@
-let gameState = "WAITING"; // WAITING, PLAYING, GAMEOVER, WIN
-let pathPoints = [];
-let currentLevel = 1; // 目前關卡
-let lives = 3; // 生命值
-const PATH_WIDTH = 75; // 2公分換算像素約為 75px
-let fireworks = []; // 煙火粒子
-let shocks = [];    // 觸電特效粒子
+/**
+ * p5_audio_visualizer
+ * 這是一個結合 p5.js 與 p5.sound 的程式，載入音樂並循環播放，畫面上會有多個隨機生成的多邊形在視窗內移動反彈，且其大小會跟隨音樂的振幅（音量）即時縮放。
+ */
+
+// 全域變數
+let shapes = [];
+let bubbles = [];
+let song;
+let amplitude;
+// 外部定義的二維陣列，做為多邊形頂點的基礎座標 (這裡使用一個六邊形作為範例)
+let points = [
+  [-6, 2], [-3, 5], [3, 7], [1, 5], [2, 4], [4, 3], [5, 2], [6, 2], [8, 4], [8, -1], [6, 0], [0, -3], [2, -6], [-2, -3], [-4, -2], [-5, -1], [-4, 1], [-6, 1]
+];
+
+function preload() {
+  // 在程式開始前預載入外部音樂資源
+  // 請確保 'midnight-quirk-255361.mp3' 檔案存在於專案資料夾中，否則會出現 404 錯誤
+  song = loadSound('midnight-quirk-255361.mp3', 
+    () => console.log('Music loaded successfully'), 
+    () => console.error('Error loading music: File not found. Please add "midnight-quirk-255361.mp3" to your project.')
+  );
+}
 
 function setup() {
+  // 初始化畫布
   createCanvas(windowWidth, windowHeight);
-  pixelDensity(1); // 確保不同螢幕像素比一致
-  initPath();
-  textAlign(CENTER, CENTER);
-  textSize(24);
-}
-
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-  initPath();
-  gameState = "WAITING"; // 視窗大小改變時重置
-}
-
-function initPath() {
-  pathPoints = [];
-  let numPoints = 40; // 產生 40 個點 (30-50 之間)
-  let centerY = height / 2;
-  let range;
-
-  // 根據關卡設定路徑垂直範圍
-  if (currentLevel === 1) {
-    range = height / 8; // 總範圍 1/4 (上下各 1/8)
-  } else if (currentLevel === 2) {
-    range = height / 6; // 總範圍 1/3 (上下各 1/6)
-  } else {
-    range = height / 4; // 總範圍 1/2 (上下各 1/4)
+  
+  // 初始化振幅物件
+  amplitude = new p5.Amplitude();
+  
+  // 播放音樂 (循環)
+  // 注意：由於瀏覽器的自動播放策略，音樂可能需要使用者互動（如點擊）後才會開始播放
+  if (song.isLoaded()) {
+    song.loop();
   }
 
-  for (let i = 0; i < numPoints; i++) {
-    let x = map(i, 0, numPoints - 1, 50, width - 50);
-    // 讓 y 值在中間 1/4 範圍內隨機曲折
-    let y = centerY + random(-range, range);
-    pathPoints.push({ x: x, y: y });
+  // 產生 10 個形狀物件
+  for (let i = 0; i < 10; i++) {
+    let shape = {
+      x: random(0, windowWidth),
+      y: random(0, windowHeight),
+      dx: random(-3, 3),
+      dy: random(-3, 3),
+      scale: random(1, 10),
+      color: color(random(255), random(255), random(255)),
+      // 透過 map() 讀取全域陣列 points，將每個頂點的 x 與 y 分別乘上 10 到 30 之間的隨機倍率來產生變形
+      points: points.map(pt => {
+        let mult = random(10, 30);
+        return [pt[0] * mult, pt[1] * mult];
+      })
+    };
+    shapes.push(shape);
   }
 }
 
 function draw() {
-  background(0); // 全螢幕黑色為「危險區域」
-
-  if (gameState === "WAITING" || gameState === "PLAYING") {
-    // 繪製灰色蜿蜒路徑 (安全區域)
-    noFill();
-    stroke(100); // 灰色路徑
-    strokeWeight(PATH_WIDTH); 
-    strokeJoin(ROUND);
-    strokeCap(ROUND);
-    
-    beginShape();
-    if (pathPoints.length > 0) {
-      curveVertex(pathPoints[0].x, pathPoints[0].y);
-      for (let p of pathPoints) {
-        curveVertex(p.x, p.y);
-      }
-      curveVertex(pathPoints[pathPoints.length - 1].x, pathPoints[pathPoints.length - 1].y);
-    }
-    endShape();
-
-    // 繪製起點與終點
-    noStroke();
-    fill(0, 255, 0); // 綠色起點
-    ellipse(pathPoints[0].x, pathPoints[0].y, 40);
-    fill(255, 0, 0); // 紅色終點
-    ellipse(pathPoints[pathPoints.length - 1].x, pathPoints[pathPoints.length - 1].y, 40);
-
-    // 繪製左上角關卡與生命值標示
-    fill(255);
-    textAlign(LEFT, TOP);
-    let heartStr = "";
-    for (let i = 0; i < lives; i++) heartStr += "❤️ ";
-    text("Level: " + currentLevel + "  生命: " + heartStr, 20, 20);
-    
-    textAlign(CENTER, CENTER); // 恢復預設對齊
-  }
-
-  if (gameState === "WAITING") {
-    // 繪製綠色圓圈 Start 按鈕
-    fill(0, 255, 0);
-    ellipse(pathPoints[0].x, pathPoints[0].y, 60); 
-    fill(0);
-    textSize(16);
-    text("start", pathPoints[0].x, pathPoints[0].y);
-    textSize(24);
-    
-    fill(255);
-    text("點擊綠色按鈕開始遊戲", width / 2, height * 0.9);
-
-  } else if (gameState === "PLAYING") {
-    // 碰撞檢查：取得滑鼠位置的顏色
-    let currentColor = get(mouseX, mouseY);
-    // 如果碰到純黑色背景 (0, 0, 0) 則輸掉
-    if (currentColor[0] === 0 && currentColor[1] === 0 && currentColor[2] === 0) {
-      createShock(mouseX, mouseY); // 產生觸電特效
-      lives--;
-      if (lives <= 0) {
-        gameState = "GAMEOVER";
-      } else {
-        gameState = "WAITING"; // 扣血後回到該關卡起點
-      }
-    }
-
-    // 檢查是否到達終點
-    if (dist(mouseX, mouseY, pathPoints[pathPoints.length - 1].x, pathPoints[pathPoints.length - 1].y) < 20) {
-      if (currentLevel < 3) {
-        // 進入下一關
-        currentLevel++;
-        initPath();
-        gameState = "WAITING";
-      } else {
-        gameState = "WIN";
-      }
-    }
-
-    // 繪製玩家指標
-    fill(255, 255, 0);
-    noStroke();
-    
-    // 根據關卡設計點的大小
-    let playerSize;
-    if (currentLevel === 1) {
-      playerSize = PATH_WIDTH / 4; // 第一關：1/4
-    } else if (currentLevel === 2) {
-      playerSize = PATH_WIDTH / 3; // 第二關：1/3
-    } else {
-      playerSize = PATH_WIDTH / 2; // 第三關：1/2
-    }
-    ellipse(mouseX, mouseY, playerSize);
-
-  } else if (gameState === "GAMEOVER") {
-    background(0); // 確保畫面全黑
-    fill(255, 0, 0);
-    textSize(48);
-    text("GAME OVER", width / 2, height / 2);
-    fill(255);
-    textSize(20);
-    text("按下 [空白鍵] 重新挑戰", width / 2, height / 2 + 60);
-  } else if (gameState === "WIN") {
-    background(0);
-    
-    // 在過關畫面施放煙火
-    if (frameCount % 20 === 0) {
-      createFirework(random(width), random(height/2, height));
-    }
-
-    fill(50, 255, 50);
-    textSize(48);
-    text("YOU WIN!", width / 2, height / 2);
-    fill(255);
-    textSize(20);
-    text("按下 [空白鍵] 返回首頁", width / 2, height / 2 + 60);
-  }
-
-  // 繪製與更新所有特效
-  handleEffects();
-}
-
-function createShock(x, y) {
-  for (let i = 0; i < 8; i++) {
-    shocks.push({
-      x: x, y: y,
-      angle: random(TWO_PI),
-      len: random(20, 50),
-      life: 255
+  // 設定背景顏色
+  background('#ffcdb2');
+  
+  // 產生並繪製泡泡
+  if (random(1) < 0.05) {
+    bubbles.push({
+      x: random(width),
+      y: height + 10,
+      size: random(10, 30),
+      speed: random(1, 3)
     });
   }
-}
-
-function createFirework(x, y) {
-  let col = color(random(255), random(255), random(255));
-  for (let i = 0; i < 50; i++) {
-    fireworks.push({
-      x: x, y: y,
-      vx: random(-3, 3),
-      vy: random(-6, 2),
-      alpha: 255,
-      color: col
-    });
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    let b = bubbles[i];
+    b.y -= b.speed;
+    b.x += random(-1, 1);
+    fill(255, 50);
+    stroke(255);
+    strokeWeight(2);
+    ellipse(b.x, b.y, b.size);
+    if (b.y < -20) bubbles.splice(i, 1);
   }
-}
 
-function handleEffects() {
-  // 處理觸電特效 (藍白閃電線條)
+  // 設定邊框粗細
   strokeWeight(2);
-  for (let i = shocks.length - 1; i >= 0; i--) {
-    let s = shocks[i];
-    stroke(100, 200, 255, s.life);
-    line(s.x, s.y, s.x + cos(s.angle) * s.len, s.y + sin(s.angle) * s.len);
-    s.life -= 15;
-    if (s.life <= 0) shocks.splice(i, 1);
-  }
-
-  // 處理煙火粒子
-  noStroke();
-  for (let i = fireworks.length - 1; i >= 0; i--) {
-    let f = fireworks[i];
-    fill(red(f.color), green(f.color), blue(f.color), f.alpha);
-    ellipse(f.x, f.y, 4);
-    f.x += f.vx; f.y += f.vy;
-    f.vy += 0.15; // 重力
-    f.alpha -= 5;
-    if (f.alpha <= 0) fireworks.splice(i, 1);
-  }
-}
-
-function mousePressed() {
-  // 只有在等待狀態點擊綠色按鈕才會開始
-  if (gameState === "WAITING") {
-    let d = dist(mouseX, mouseY, pathPoints[0].x, pathPoints[0].y);
-    if (d < 30) {
-      gameState = "PLAYING";
+  
+  // 取得當前音量大小（數值介於 0 到 1）
+  let level = amplitude.getLevel();
+  
+  // 使用 map() 函式將 level 從 (0, 1) 的範圍映射到 (0.5, 2) 的範圍
+  let sizeFactor = map(level, 0, 1, 0.5, 2);
+  
+  // 使用 for...of 迴圈走訪 shapes 陣列中的每個 shape 進行更新與繪製
+  for (let shape of shapes) {
+    // 位置更新
+    shape.x += shape.dx;
+    shape.y += shape.dy;
+    
+    // 邊緣反彈檢查
+    if (shape.x < 0 || shape.x > windowWidth) {
+      shape.dx *= -1;
     }
+    if (shape.y < 0 || shape.y > windowHeight) {
+      shape.dy *= -1;
+    }
+    
+    // 設定外觀
+    fill(shape.color);
+    stroke(shape.color);
+    
+    // 座標轉換與縮放
+    push();
+    translate(shape.x, shape.y);
+    // 根據移動方向調整水平縮放，實現左右翻轉效果
+    if (shape.dx > 0) {
+      scale(-1, 1); // 往右移動時，左右顛倒
+    }
+    scale(sizeFactor);
+    
+    // 繪製多邊形
+    beginShape();
+    for (let pt of shape.points) {
+      vertex(pt[0], pt[1]);
+    }
+    endShape(CLOSE);
+    
+    // 狀態還原
+    pop();
   }
 }
 
-function keyPressed() {
-  // 按下空白鍵重置遊戲 (keyCode 32 是空白鍵)
-  if ((gameState === "GAMEOVER" || gameState === "WIN") && key === ' ') {
-    // 重新開始時重置關卡與生命
-    currentLevel = 1;
-    lives = 3;
-    fireworks = []; // 清空特效
-    shocks = [];
-    initPath();
-    gameState = "WAITING";
+// 處理瀏覽器自動播放策略：點擊畫面以啟動音訊環境，並控制音樂播放/暫停
+function mousePressed() {
+  if (getAudioContext().state !== 'running') {
+    userStartAudio();
   }
+
+  if (song.isPlaying()) {
+    song.pause();
+  } else {
+    song.loop();
+  }
+}
+
+// 視窗大小改變時調整畫布
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }

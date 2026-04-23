@@ -1,128 +1,112 @@
-let grasses = [];
-let bubbles = [];
-let iframe;
+/**
+ * p5_audio_visualizer
+ * 這是一個結合 p5.js 與 p5.sound 的程式，載入音樂並循環播放，
+ * 畫面上會有多個隨機生成的多邊形在視窗內移動反彈，
+ * 且其大小會跟隨音樂的振幅（音量）即時縮放。
+ */
+
+// 全域變數定義
+let shapes = [];
+let song;
+let amplitude;
+// 外部定義的二維陣列，做為多邊形頂點的基礎座標
+let points = [
+  [-2, 4],
+  [2, 4],
+  [4, 0],
+  [2, -4],
+  [-2, -4],
+  [-4, 0]
+];
+
+function preload() {
+  // 在程式開始前預載入外部音樂資源
+  song = loadSound('midnight-quirk-255361.mp3');
+}
 
 function setup() {
-  let cnv = createCanvas(windowWidth, windowHeight);
-  cnv.style('pointer-events', 'none'); // 讓滑鼠事件穿透畫布，以便操作下方的網頁
-  cnv.position(0, 0);
-  cnv.style('z-index', '1'); // 確保畫布覆蓋在網頁上層
+  // 初始化畫布
+  createCanvas(windowWidth, windowHeight);
 
-  iframe = createElement('iframe');
-  iframe.position(0, 0);
-  iframe.size(windowWidth, windowHeight);
-  iframe.attribute('src', 'https://www.et.tku.edu.tw');
-  iframe.style('border', 'none');
-  iframe.style('z-index', '0'); // 網頁在下層
+  // 初始化振幅分析物件
+  amplitude = new p5.Amplitude();
 
-  let colors = ['#ffbe0b', '#fb5607', '#ff006e', '#8338ec', '#3a86ff'];
-
-  for (let k = 0; k < 50; k++) {
-    let c = color(random(colors));
-    c.setAlpha(100); // 設定透明度，數值越低越透明，重疊效果越明顯
-    grasses.push({
-      x: random(width), // 位置
-      len: random(height * 0.2, height * 0.66), // 高度
-      col: c, // 顏色
-      thickness: random(30, 60), // 粗細
-      swaySpeed: random(0.005, 0.02), // 搖晃速度
-      swayOffset: random(1000) // 搖晃偏移
+  // 產生 10 個形狀物件
+  for (let i = 0; i < 10; i++) {
+    // 透過 map() 讀取全域陣列 points，產生變形
+    let deformedPoints = points.map(pt => {
+      // 將每個頂點的 x 與 y 分別乘上 10 到 30 之間的隨機倍率
+      return [pt[0] * random(10, 30), pt[1] * random(10, 30)];
     });
+
+    let shape = {
+      x: random(0, windowWidth),
+      y: random(0, windowHeight),
+      dx: random(-3, 3),
+      dy: random(-3, 3),
+      scale: random(1, 10),
+      color: color(random(255), random(255), random(255)),
+      points: deformedPoints
+    };
+
+    shapes.push(shape);
   }
 }
 
 function draw() {
-  // 背景顏色改為 RGBA，透明度 0.2 (255 * 0.2 = 51)，讓後方網頁可見
-  clear();
-  background(3, 161, 252, 51);
-  blendMode(BLEND);
+  // 設定背景顏色
+  background('#ffcdb2');
+  
+  // 設定邊框粗細
+  strokeWeight(2);
 
-  noFill();
+  // 取得當前音量大小 (0 ~ 1)
+  let level = amplitude.getLevel();
+  
+  // 將音量映射到縮放倍率 (0.5 ~ 2)
+  let sizeFactor = map(level, 0, 1, 0.5, 2);
 
-  for (let k = 0; k < grasses.length; k++) {
-    let g = grasses[k];
-    stroke(g.col);
-    strokeWeight(g.thickness);
+  // 走訪每個 shape 進行更新與繪製
+  for (let shape of shapes) {
+    // 位置更新
+    shape.x += shape.dx;
+    shape.y += shape.dy;
 
+    // 邊緣反彈檢查
+    if (shape.x < 0 || shape.x > windowWidth) {
+      shape.dx *= -1;
+    }
+    if (shape.y < 0 || shape.y > windowHeight) {
+      shape.dy *= -1;
+    }
+
+    // 設定外觀
+    fill(shape.color);
+    stroke(shape.color);
+
+    // 座標轉換與縮放
+    push();
+    translate(shape.x, shape.y);
+    scale(sizeFactor); // 依照音樂音量縮放圖形
+
+    // 繪製多邊形
     beginShape();
-    curveVertex(g.x, height); // 起始控制點
-    curveVertex(g.x, height); // 底部固定點
-
-    let xOffset, y;
-    for (let i = 0; i <= g.len; i += 7) {
-      y = height - i;
-      // 利用 noise 和 map 計算擺動，高度越高 (i 越大) 擺動幅度越大
-      let n = noise(i * 0.01, frameCount * g.swaySpeed + g.swayOffset);
-      xOffset = map(n, 0, 1, -i * 0.2, i * 0.2);
-      curveVertex(g.x + xOffset, y);
+    for (let pt of shape.points) {
+      vertex(pt[0], pt[1]);
     }
-    curveVertex(g.x + xOffset, y); // 結束控制點
-    endShape();
-  }
+    endShape(CLOSE);
 
-  // 氣泡產生與繪製邏輯
-  if (random() < 0.05) { // 每一幀有 5% 機率產生新氣泡
-    bubbles.push(new Bubble());
-  }
-
-  for (let i = bubbles.length - 1; i >= 0; i--) {
-    let b = bubbles[i];
-    b.update();
-    b.display();
-    if (b.isDead()) {
-      bubbles.splice(i, 1);
-    }
+    // 狀態還原
+    pop();
   }
 }
 
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-  if (iframe) {
-    iframe.size(windowWidth, windowHeight);
-  }
-}
-
-class Bubble {
-  constructor() {
-    this.x = random(width);
-    this.y = height + random(10, 50); // 從視窗底部下方開始
-    this.d = random(10, 30); // 氣泡大小
-    this.speed = random(1, 3); // 上升速度
-    this.popHeight = random(height * 0.2, height * 0.8); // 設定破掉的高度
-    this.popped = false;
-    this.popTimer = 0;
-  }
-
-  update() {
-    if (!this.popped) {
-      this.y -= this.speed;
-      this.x += sin(frameCount * 0.05 + this.y * 0.01) * 0.5; // 輕微左右搖晃
-      if (this.y < this.popHeight) {
-        this.popped = true;
-      }
-    } else {
-      this.popTimer++;
-    }
-  }
-
-  display() {
-    if (!this.popped) {
-      noStroke();
-      fill(255, 127); // 水泡顏色白色，透明度0.5 (255*0.5 ≈ 127)
-      circle(this.x, this.y, this.d);
-      
-      fill(255, 178); // 水泡上面的白色圓圈，透明度0.7 (255*0.7 ≈ 178)
-      circle(this.x + this.d * 0.2, this.y - this.d * 0.2, this.d * 0.3);
-    } else {
-      // 破掉的效果：擴大的圓框
-      noFill();
-      stroke(255, map(this.popTimer, 0, 10, 255, 0));
-      strokeWeight(2);
-      circle(this.x, this.y, this.d + this.popTimer * 3);
-    }
-  }
-
-  isDead() {
-    return this.popped && this.popTimer > 10;
+// 額外加入：點擊滑鼠以確保音訊播放（解決瀏覽器自動播放限制）
+function mousePressed() {
+  userStartAudio();
+  if (song.isPlaying()) {
+    // song.pause();
+  } else {
+    song.loop();
   }
 }

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深海作品集入口 - 登入</title>
+    <link rel="stylesheet" href="login.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="ocean">
+        <!-- 動態氣泡背景 -->
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        
+        <div class="login-container">
+            <div class="login-box">
+                <div class="logo">
+                    <div class="seaweed-icon"></div>
+                    <h1>深海作品集</h1>
+                    <p>Deep Sea Portfolio</p>
+                </div>
+                <form id="loginForm">
+                    <div class="input-group">
+                        <input type="text" id="username" required placeholder="探索者帳號">
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="password" required placeholder="通關密語">
+                    </div>
+                    <button type="submit" class="login-btn">下潛探索</button>
+                </form>
+                <div id="status-msg"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.querySelector('.login-btn');
+            btn.innerText = '正在潛入中...';
+            btn.style.opacity = '0.7';
+            
+            // 模擬載入延遲，增加儀式感
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1200);
+        });
+    </script>
+</body>
+</html>

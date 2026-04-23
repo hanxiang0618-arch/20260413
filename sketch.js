@@ -2,6 +2,7 @@ let projects = [];
 let hoverIndex = -1;
 let bubbles = [];
 let currentIframe = null; // 用於儲存當前顯示的 iframe 容器
+let fishes = []; // 存放多條魚的陣列
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -16,10 +17,28 @@ function setup() {
     });
   }
 
+  // 初始化多條會游的魚
+  for (let i = 0; i < 5; i++) {
+    fishes.push({
+      x: random(width),
+      y: random(height * 0.2, height * 0.8),
+      size: random(40, 70),
+      speed: random(1, 3) * (random() > 0.5 ? 1 : -1),
+      color: color(random(200, 255), random(150, 200), random(50, 100), 200),
+      url: "https://hackmd.io/@xiangli1234567899/B1pXk7Mpbe",
+      phase: random(PI * 2) // 每個魚的波動相位不同
+    });
+  }
+
   // 初始化作品資料，你可以根據需要修改這裡的內容
   projects = [
-    { title: "第一週作業", desc: "校網", color: color(0, 191, 255), url: "week1/index.html" },
-    { title: "第二週作業", desc: "電流急急棒", color: color(255, 127, 80), url: "week2/index.html" }
+    { title: "第一週作業", desc: "基礎作業", color: color(0, 191, 255), url: "week1/index.html" },
+    { title: "第二週作業", desc: "魚", color: color(255, 127, 80), url: "week2/index.html" },
+    { title: "第三週作業", desc: "色塊", color: color(144, 238, 144), url: "week3/index.html" },
+    { title: "第四週作業", desc: "網頁文字(dom)", color: color(255, 215, 0), url: "week4/index.html" },
+    { title: "第五週作業", desc: "校網", color: color(218, 112, 214), url: "week5/index.html" },
+    { title: "第六週作業 (1)", desc: "電流急急棒", color: color(72, 209, 204), url: "week6.1/index.html" },
+    { title: "第六週作業 (2)", desc: "踩地雷", color: color(255, 105, 180), url: "week6.2/index.html" }
   ];
   
   textAlign(CENTER, CENTER);
@@ -30,14 +49,17 @@ function draw() {
   background(0, 27, 46);
   drawBackgroundEffect();
 
+  // 在海草之前繪製魚，這樣它就會在海草後方
+  updateAndDrawFish();
+
   // 繪製海床
   noStroke();
   fill(10, 40, 60);
   rect(0, height - 40, width, 40);
 
-  let seaweedWidth = 150;
+  let seaweedWidth = 120;
   let seaweedHeight = 400;
-  let spacing = 250;
+  let spacing = 80;
   let totalWidth = projects.length * (seaweedWidth + spacing) - spacing;
   let startX = (width - totalWidth) / 2;
   let groundY = height - 40;
@@ -46,16 +68,19 @@ function draw() {
 
   for (let i = 0; i < projects.length; i++) {
     let x = startX + i * (seaweedWidth + spacing) + seaweedWidth / 2;
+
+    // 針對第四週作品 (索引值為 3) 降低高度，防止其標籤遮擋上方文字
+    let h = (i === 3) ? seaweedHeight * 0.7 : seaweedHeight;
     
     // 檢查滑鼠是否在海草的感應區塊內 (矩形區域)
     let isHovered = (mouseX > x - seaweedWidth/2 && mouseX < x + seaweedWidth/2 && 
-                    mouseY > groundY - seaweedHeight && mouseY < groundY);
+                    mouseY > groundY - h && mouseY < groundY);
     
     if (isHovered) {
       hoverIndex = i;
-      drawProjectSeaweed(projects[i], x, groundY, seaweedWidth, seaweedHeight, true, i);
+      drawProjectSeaweed(projects[i], x, groundY, seaweedWidth, h, true, i);
     } else {
-      drawProjectSeaweed(projects[i], x, groundY, seaweedWidth, seaweedHeight, false, i);
+      drawProjectSeaweed(projects[i], x, groundY, seaweedWidth, h, false, i);
     }
   }
 
@@ -150,9 +175,67 @@ function drawBackgroundEffect() {
   }
 }
 
+function updateAndDrawFish() {
+  for (let fish of fishes) {
+    // 更新魚的位置
+    fish.x += fish.speed;
+    
+    // 邊界檢查：游出螢幕後回到另一邊
+    if (fish.x > width + 100) fish.x = -100;
+    if (fish.x < -100) fish.x = width + 100;
+
+    // 計算魚當前的實際高度（包含 sin 波動）並檢查滑鼠是否懸停
+    let currentFishY = fish.y + sin(frameCount * 0.05 + fish.phase) * 20;
+    let d = dist(mouseX, mouseY, fish.x, currentFishY);
+    let isFishHovered = (d < fish.size / 2 + 15); // 稍微放大感應範圍
+
+    // 繪製魚
+    push();
+    translate(fish.x, currentFishY);
+    
+    // 根據前進方向翻轉魚
+    if (fish.speed < 0) scale(-1, 1);
+
+    // 魚的發光效果：懸停時大幅加強發光半徑並改變光暈顏色
+    drawingContext.shadowBlur = isFishHovered ? 50 : 15;
+    drawingContext.shadowColor = isFishHovered ? color(255, 255, 200) : fish.color;
+    
+    fill(fish.color);
+    noStroke();
+    // 魚身
+    ellipse(0, 0, fish.size, fish.size * 0.6);
+    // 魚尾
+    triangle(-fish.size/2, 0, -fish.size * 0.9, -fish.size * 0.3, -fish.size * 0.9, fish.size * 0.3);
+    // 魚眼
+    fill(0);
+    ellipse(fish.size/4, -fish.size/10, 5, 5);
+
+    // 在魚身上寫「筆記」
+    push();
+    if (fish.speed < 0) scale(-1, 1); // 確保文字不會因為魚的轉向而變成鏡像
+    fill(0);
+    textSize(12);
+    textStyle(BOLD);
+    text("筆記", -2, 2);
+    pop();
+
+    pop();
+  }
+}
+
 function mousePressed() {
   // 如果已經有視窗開啟，則不重複觸發
   if (currentIframe) return;
+
+  // 檢查是否點擊到任何一條魚
+  for (let fish of fishes) {
+    let currentFishY = fish.y + sin(frameCount * 0.05 + fish.phase) * 20;
+    let d = dist(mouseX, mouseY, fish.x, currentFishY);
+    if (d < fish.size / 2 + 10) {
+      showProjectIframe(fish.url);
+      return;
+    }
+  }
 
   // 如果點擊了某個海草，以 iframe 方式開啟連結
   if (hoverIndex !== -1) {
@@ -181,6 +264,24 @@ function showProjectIframe(url) {
   container.style('position', 'relative');
   container.parent(currentIframe);
 
+  // 創建右上角的關閉按鈕 (X)
+  let closeBtn = createDiv('×');
+  closeBtn.style('position', 'absolute');
+  closeBtn.style('top', '-50px'); // 放在容器上方
+  closeBtn.style('right', '0');
+  closeBtn.style('font-size', '44px');
+  closeBtn.style('color', 'white');
+  closeBtn.style('cursor', 'pointer');
+  closeBtn.style('line-height', '1');
+  closeBtn.style('user-select', 'none');
+  closeBtn.parent(container);
+
+  // 點擊 X 關閉視窗
+  closeBtn.mousePressed(() => {
+    currentIframe.remove();
+    currentIframe = null;
+  });
+
   // 創建 iframe 本體
   let frame = createElement('iframe');
   frame.attribute('src', url);
@@ -190,10 +291,12 @@ function showProjectIframe(url) {
   frame.style('border-radius', '10px');
   frame.parent(container);
 
-  // 點擊背景處關閉
-  currentIframe.mousePressed(() => {
-    currentIframe.remove();
-    currentIframe = null;
+  // 點擊黑色半透明背景處關閉 (排除點擊到內容容器的情況)
+  currentIframe.mousePressed((e) => {
+    if (e.target === currentIframe.elt) {
+      currentIframe.remove();
+      currentIframe = null;
+    }
   });
 }
 
