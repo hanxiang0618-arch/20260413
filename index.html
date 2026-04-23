@@ -15,6 +15,39 @@
   </head>
 
   <body>
+    <!-- 進場閘門介面 -->
+    <div id="entry-overlay">
+      <div class="door left-door"></div>
+      <div class="door right-door"></div>
+      
+      <!-- 掃描線特效 -->
+      <div class="scan-line"></div>
+
+      <div class="entry-content">
+        <div class="seaweed-icon"></div>
+        <div class="hud-box">
+            <h1>深海作品展覽</h1>
+            <p class="subtitle">DEEP SEA PORTFOLIO • DEPTH: 4000M</p>
+        </div>
+        <button id="open-btn" class="login-btn">開啟閘門</button>
+      </div>
+    </div>
+
     <script src="sketch.js"></script>
+
+    <script>
+      document.getElementById('open-btn').addEventListener('click', function() {
+        const overlay = document.getElementById('entry-overlay');
+        this.innerText = '系統啟動...';
+        
+        // 觸發開門動畫
+        overlay.classList.add('opened');
+        
+        // 動畫結束後移除 DOM，確保不影響後續互動
+        setTimeout(() => {
+          overlay.remove();
+        }, 2500); 
+      });
+    </script>
   </body>
 </html>

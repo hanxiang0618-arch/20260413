@@ -21,11 +21,116 @@ body {
 .ocean {
     width: 100vw;
     height: 100vh;
-    background: linear-gradient(180deg, #001b2e 0%, #000b14 100%);
+    background: radial-gradient(circle at center, #003a5c 0%, #000b14 100%);
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
+    overflow: hidden;
+}
+
+/* 閘門遮罩層 */
+#entry-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* 門板通用樣式 */
+.door {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(145deg, #001b2e 0%, #012a42 100%);
+    border: 1px solid rgba(72, 209, 204, 0.2);
+    box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.8);
+    transition: transform 1.8s cubic-bezier(0.77, 0, 0.175, 1);
+    display: flex;
+    z-index: 1;
+}
+
+.left-door {
+    left: 0;
+    border-right: 4px solid var(--accent-cyan);
+}
+
+.right-door {
+    right: 0;
+    border-left: 4px solid var(--accent-cyan);
+}
+
+/* 掃描線動畫 */
+.scan-line {
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    background: linear-gradient(to bottom, transparent, rgba(72, 209, 204, 0.1), transparent);
+    z-index: 2; /* 降低層位，確保在門板(1)之上但內容(10)之下 */
+    animation: scanning 4s linear infinite;
+}
+
+@keyframes scanning {
+    0% { top: -10%; }
+    100% { top: 110%; }
+}
+
+/* 內容區塊 */
+.entry-content {
+    position: relative;
+    z-index: 100; /* 大幅提升層位，確保文字絕對在最前方 */
+    text-align: center;
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.hud-box {
+    margin-bottom: 40px;
+    padding: 20px;
+    border-top: 1px solid rgba(72, 209, 204, 0.4);
+    border-bottom: 1px solid rgba(72, 209, 204, 0.4);
+    /* 加入微弱的毛玻璃效果，能有效遮斷後方移動的線條視覺干擾 */
+    backdrop-filter: blur(2px);
+    background: rgba(0, 27, 46, 0.2);
+}
+
+.hud-box h1 {
+    color: white;
+    font-size: 42px;
+    letter-spacing: 12px;
+    text-shadow: 0 0 20px rgba(72, 209, 204, 0.6);
+    margin: 0;
+    font-weight: 700;
+}
+
+.subtitle {
+    color: var(--accent-cyan);
+    font-size: 12px;
+    letter-spacing: 4px;
+    margin-top: 10px;
+    opacity: 0.7;
+}
+
+/* 開門狀態 */
+#entry-overlay.opened .left-door {
+    transform: translateX(-100%);
+}
+
+#entry-overlay.opened .right-door {
+    transform: translateX(100%);
+}
+
+#entry-overlay.opened .entry-content {
+    opacity: 0;
+    transform: scale(1.2);
+    pointer-events: none;
 }
 
 /* 登入遮罩全螢幕覆蓋設定 */
@@ -139,6 +244,11 @@ body {
     box-shadow: 0 0 20px rgba(72, 209, 204, 0.6);
 }
 
+@keyframes pulse {
+    0% { box-shadow: 0 0 10px rgba(72, 209, 204, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(72, 209, 204, 0.7); }
+    100% { box-shadow: 0 0 10px rgba(72, 209, 204, 0.4); }
+}
 /* 狀態訊息 */
 #status-msg {
     color: var(--accent-cyan);

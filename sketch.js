@@ -3,6 +3,7 @@ let hoverIndex = -1;
 let bubbles = [];
 let currentIframe = null; // 用於儲存當前顯示的 iframe 容器
 let fishes = []; // 存放多條魚的陣列
+let gateOpenedTriggered = false; // 追蹤閘門是否已經開啟
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -13,7 +14,8 @@ function setup() {
       x: random(width),
       y: random(height),
       size: random(5, 15),
-      speed: random(0.5, 2)
+      speed: random(0.5, 2),
+      col: color(255, 50) // 初始為半透明白色
     });
   }
 
@@ -159,10 +161,33 @@ function drawProjectSeaweed(project, x, y, w, h, isHovered, index) {
 }
 
 function drawBackgroundEffect() {
-  // 繪製氣泡
-  stroke(255, 50);
+  // 檢查 HTML 中的閘門是否已經被點擊開啟
+  if (!gateOpenedTriggered) {
+    let overlay = document.getElementById('entry-overlay');
+    if (overlay && overlay.classList.contains('opened')) {
+      gateOpenedTriggered = true;
+    }
+  }
+
   noFill();
   for (let b of bubbles) {
+    if (gateOpenedTriggered) {
+      // 如果閘門開了，且氣泡還沒變色，就賦予霓虹色
+      if (b.col.levels[0] === 255 && b.col.levels[3] === 50) {
+        let neonColors = [
+          color(255, 0, 255), // 桃紅
+          color(0, 255, 255), // 青色
+          color(57, 255, 20), // 螢光綠
+          color(255, 255, 0), // 鮮黃
+          color(255, 20, 147) // 深粉
+        ];
+        b.col = random(neonColors);
+      }
+      drawingContext.shadowBlur = 15;
+      drawingContext.shadowColor = b.col;
+    }
+
+    stroke(b.col);
     ellipse(b.x, b.y, b.size);
     b.y -= b.speed; // 向上移動
     b.x += sin(frameCount * 0.01 + b.y) * 0.5; // 左右微晃
@@ -171,8 +196,14 @@ function drawBackgroundEffect() {
     if (b.y < -20) {
       b.y = height + 20;
       b.x = random(width);
+      // 如果已經開啟，重生的氣泡也給予新的霓虹隨機色
+      if (gateOpenedTriggered) {
+        let neonColors = [color(255, 0, 255), color(0, 255, 255), color(57, 255, 20), color(255, 255, 0)];
+        b.col = random(neonColors);
+      }
     }
   }
+  drawingContext.shadowBlur = 0; // 重設發光，以免影響後續繪製
 }
 
 function updateAndDrawFish() {
@@ -224,6 +255,11 @@ function updateAndDrawFish() {
 }
 
 function mousePressed() {
+  // 如果進場閘門還在（包含正在開門的動畫期間），則不觸發後續的作品點擊邏輯
+  if (document.getElementById('entry-overlay')) {
+    return;
+  }
+
   // 如果已經有視窗開啟，則不重複觸發
   if (currentIframe) return;
 
