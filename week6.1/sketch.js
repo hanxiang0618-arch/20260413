@@ -108,6 +108,10 @@ function draw() {
 
   } else if (gameState === "WAITING" || gameState === "PLAYING") {
     // 繪製灰色蜿蜒路徑 (安全區域)
+    push();
+    // 設定發光效果：模糊度與顏色
+    drawingContext.shadowBlur = 25;
+    drawingContext.shadowColor = color(150);
     noFill();
     stroke(100); // 灰色路徑
     strokeWeight(pathWidth); 
@@ -123,6 +127,7 @@ function draw() {
       curveVertex(pathPoints[pathPoints.length - 1].x, pathPoints[pathPoints.length - 1].y);
     }
     endShape();
+    pop();
 
     // 繪製重新設計的起點與終點
     drawMarker(pathPoints[0].x, pathPoints[0].y, "START", color(0, 255, 100));

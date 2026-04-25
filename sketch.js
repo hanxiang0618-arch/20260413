@@ -38,7 +38,7 @@ function setup() {
     { title: "第二週作業", desc: "魚", color: color(255, 127, 80), url: "week2/index.html" },
     { title: "第三週作業", desc: "色塊", color: color(144, 238, 144), url: "week3/index.html" },
     { title: "第四週作業", desc: "網頁文字(dom)", color: color(255, 215, 0), url: "week4/index.html" },
-    { title: "第五週作業", desc: "校網", color: color(218, 112, 214), url: "week5/index.html" },
+    { title: "第五週作業", desc: "水草", color: color(218, 112, 214), url: "week5/index.html" },
     { title: "第六週作業 (1)", desc: "電流急急棒", color: color(72, 209, 204), url: "week6.1/index.html" },
     { title: "第六週作業 (2)", desc: "踩地雷", color: color(255, 105, 180), url: "week6.2/index.html" }
   ];
