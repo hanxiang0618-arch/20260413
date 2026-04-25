@@ -35,15 +35,48 @@ function draw() {
   drawTimer();
 
   if (isGameOver) {
-    fill(0, 255, 0); // 綠色文字
-    textSize(64);
-    textAlign(CENTER, CENTER);
-    text("你贏了！", width / 2, height / 2);
-    
-    textSize(24);
-    fill(200);
-    text("按下 [空白鍵] 重新開始", width / 2, height / 2 + 80);
+    drawWinScreen();
   }
+}
+
+function drawWinScreen() {
+  push();
+  // 1. 半透明深色遮罩，增加層次感
+  fill(0, 200);
+  noStroke();
+  rect(0, 0, width, height);
+  
+  // 2. 繪製科技感的邊框裝飾
+  stroke(0, 255, 0, 150);
+  strokeWeight(2);
+  noFill();
+  rectMode(CENTER);
+  // 加上一個會稍微律動的外框，增加動態感
+  let bounce = sin(frameCount * 0.05) * 5;
+  rect(width / 2, height / 2, 500 + bounce, 300 + bounce, 15);
+
+  // 3. 文字內容
+  textAlign(CENTER, CENTER);
+  noStroke();
+  
+  // 主標題：使用大寫英文與綠色調增加專業感
+  fill(0, 255, 0);
+  textSize(54);
+  textStyle(BOLD);
+  text("MISSION COMPLETE", width / 2, height / 2 - 50);
+  
+  // 遊戲數據：顯示玩家花了多久時間
+  textStyle(NORMAL);
+  fill(255);
+  textSize(28);
+  text("地雷排除時間: " + elapsedTime.toFixed(2) + " 秒", width / 2, height / 2 + 30);
+  
+  // 閃爍提示文字：引導玩家按下空白鍵
+  let alpha = map(sin(frameCount * 0.1), -1, 1, 50, 255);
+  fill(255, alpha);
+  textSize(20);
+  text("按下 [ 空白鍵 ] 重新開始探測", width / 2, height / 2 + 110);
+  pop();
 }
 
 function drawGrid() {
