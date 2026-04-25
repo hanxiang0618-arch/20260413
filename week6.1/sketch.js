@@ -436,4 +436,15 @@ function keyPressed() {
     initObstacles();
     gameState = "WAITING";
   }
+function drawPathShape() {
+  beginShape();
+  if (pathPoints.length > 0) {
+    curveVertex(pathPoints[0].x, pathPoints[0].y);
+    for (let p of pathPoints) {
+      curveVertex(p.x, p.y);
+    }
+    curveVertex(pathPoints[pathPoints.length - 1].x, pathPoints[pathPoints.length - 1].y);
+  }
+  endShape();
+}
 }
