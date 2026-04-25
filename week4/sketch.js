@@ -1,6 +1,7 @@
 let input;
 let slider;
 let button;
+let sel;
 let isWaving = false;
 let iframe;
 
@@ -24,6 +25,16 @@ function setup() {
   button = createButton('跳動開關');
   button.position(240, 35);
   button.mousePressed(() => isWaving = !isWaving);
+
+  // 創建下拉式選單並放在按鈕右邊
+  sel = createSelect();
+  sel.position(350, 35);
+  sel.option('淡江大學', 'https://www.tku.edu.tw');
+  sel.option('淡江教科系', 'https://www.et.tku.edu.tw');
+  // 當選單內容改變時，更新 iframe 的連結
+  sel.changed(() => {
+    iframe.attribute('src', sel.value());
+  });
 
   // 設定文字大小與對齊方式
   textAlign(LEFT, CENTER);
