@@ -276,6 +276,20 @@ function mousePressed() {
   // 如果點擊了某個海草，以 iframe 方式開啟連結
   if (hoverIndex !== -1) {
     showProjectIframe(projects[hoverIndex].url);
+    return;
+  }
+
+  // 檢查是否點擊到背景氣泡
+  for (let b of bubbles) {
+    let d = dist(mouseX, mouseY, b.x, b.y);
+    if (d < b.size / 2 + 10) { // 稍微放寬感應區，讓小氣泡更好點擊
+      b.y = height + 20; // 氣泡「破掉」並從底部重新產生
+      b.x = random(width);
+      if (gateOpenedTriggered) {
+        let neonColors = [color(255, 0, 255), color(0, 255, 255), color(57, 255, 20), color(255, 255, 0)];
+        b.col = random(neonColors);
+      }
+    }
   }
 }
 
