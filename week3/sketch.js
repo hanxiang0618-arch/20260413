@@ -1,43 +1,55 @@
+let trail = []; // 儲存所有圓圈的位置與顏色資訊
+let fixedDiameter = 60; // 圓形的固定直徑
+let gridSize = 70; // 縮小網格單元的大小，使圓圈距離更靠近
+
 function setup() {
-  // 1. 建立一個充滿視窗的畫布
   createCanvas(windowWidth, windowHeight);
-  // 使用 HSB 顏色模式 (色相 0-360, 飽和度 0-100, 亮度 0-100)
   colorMode(HSB, 360, 100, 100);
+
+  // 1. 初始化：讓圓圈在一開始就佈滿整個螢幕
+  // 使用比直徑略小的間距來產生一點重疊感
+  for (let x = 0; x <= width + gridSize; x += gridSize) {
+    for (let y = 0; y <= height + gridSize; y += gridSize) {
+      trail.push({
+        x: x,
+        y: y,
+        // 讓初始背景圓圈的色相也隨 X 與 Y 雙向分佈
+        h: (map(x, 0, width, 0, 180) + map(y, 0, height, 0, 180)) % 360
+      });
+    }
+  }
 }
 
 function draw() {
   background(0, 0, 95); // 淺灰色背景
 
-  let diameter = 100;    // 圓形的直徑
-  let spacingX = diameter * 0.8; // 水平間距 (小於直徑產生重疊)
-  let spacingY = diameter * 0.5; // 垂直間距
+  // 2. 顏色隨滑鼠水平 (mouseX) 與垂直 (mouseY) 位置共同變化
+  let baseHue = (map(mouseX, 0, width, 0, 180) + map(mouseY, 0, height, 0, 180)) % 360;
 
-  /**
-   * 5. map() 函數說明：
-   * map(value, start1, stop1, start2, stop2)
-   * 我們將滑鼠的 X 座標 (0 到 width) 映射到 0 到 360 的色相值。
-   * 當滑鼠在左側時 baseHue 為 0 (紅色系)，在右側時接近 360。
-   */
-  let baseHue = map(mouseX, 0, width, 0, 360);
-
-  stroke(0);        // 1. 加上黑色邊框
-  strokeWeight(2);  // 線條粗細設定
-
-  // 2. 使用巢狀迴圈繪製圖形
-  for (let y = 0; y < height + diameter; y += spacingY) {
-    // 2. 魚鱗狀位移：判斷當前是第幾列，如果是奇數列則向右偏移
-    let rowCount = floor(y / spacingY);
-    let xOffset = (rowCount % 2 === 0) ? 0 : spacingX / 2;
-
-    for (let x = 0; x < width + diameter; x += spacingX) {
-      // 3. 強化顏色變化：
-      // 每個圓形的色相 = 滑鼠基礎值 + (X座標產生的偏移) + (Y座標產生的偏移)
-      // 使用 % 360 是為了確保數值超過 360 後會回到 0，形成色彩循環
-      let h = (baseHue + map(x, 0, width, 0, 60) + map(y, 0, height, 0, 60)) % 360;
-      
-      fill(h, 60, 95); // 使用計算出的色相，飽和度 60，亮度 95
-      ellipse(x + xOffset, y, diameter, diameter);
+  // 3. 每一排每一列的複製貼上效果
+  if (mouseX !== pmouseX || mouseY !== pmouseY) {
+    // 計算滑鼠在一個網格單元內的相對座標
+    let offsetX = mouseX % gridSize;
+    let offsetY = mouseY % gridSize;
+    
+    // 在每一排與每一列的對應位置都「貼」上圓圈
+    for (let tx = offsetX; tx <= width + gridSize; tx += gridSize) {
+      for (let ty = offsetY; ty <= height + gridSize; ty += gridSize) {
+        trail.push({ x: tx, y: ty, h: baseHue });
+      }
     }
+  }
+
+  stroke(0, 40); // 加上輕微透明的細邊框
+  strokeWeight(1);
+
+  // 4. 繪製所有圓形（移除移動邏輯，讓圖形固定在原位）
+  for (let p of trail) {
+    // 每個點的座標固定，不再更新 p.x 和 p.y
+    // 顏色則保持該點被「貼」上去時的設定
+    let h = (p.h + baseHue) % 360;
+    fill(h, 60, 95);
+    ellipse(p.x, p.y, fixedDiameter, fixedDiameter);
   }
 }
 

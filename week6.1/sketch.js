@@ -32,8 +32,8 @@ function initPath() {
   let numPoints = 30;
   let centerY = height / 2;
   // 根據關卡設定路徑波動幅度與雜訊密度（密度越高路徑越蜿蜒）
-  let amplitude = map(currentLevel, 1, 3, height / 6, height / 3);
-  let noiseStep = map(currentLevel, 1, 3, 0.08, 0.15);
+  let amplitude = map(currentLevel, 1, 3, height / 5, height / 2); // 增加波動幅度，讓路徑更曲折
+  let noiseStep = map(currentLevel, 1, 3, 0.1, 0.25); // 增加雜訊密度，讓彎曲更頻繁
   let nOffset = random(1000); // 隨機種子確保每次路徑不同
 
   for (let i = 0; i < numPoints; i++) {

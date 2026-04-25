@@ -105,7 +105,7 @@ function draw() {
 function mousePressed() {
   userStartAudio();
   if (song.isPlaying()) {
-    // song.pause();
+    song.pause();
   } else {
     song.loop();
   }
